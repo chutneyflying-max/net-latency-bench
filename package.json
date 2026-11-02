@@ -1,0 +1,12 @@
+{
+  "name": "net-latency-bench",
+  "version": "1.0.0",
+  "description": "Automated network latency, socket handshake and HTTP benchmark auditor",
+  "type": "module",
+  "scripts": {
+    "start": "node src/evaluator.js"
+  },
+  "dependencies": {
+    "playwright": "^1.49.0"
+  }
+}
