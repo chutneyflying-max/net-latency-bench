@@ -1,6 +1,6 @@
 /**
- * Network Latency & Endpoint Health Evaluator
- * Distributed availability & latency telemetry probe
+ * Net Latency Bench Evaluator
+ * Distributed network benchmark & latency telemetry engine
  */
 
 import { chromium } from 'playwright';
@@ -13,8 +13,10 @@ const CONFIG = {
   timeWindow: process.env.TIME_WINDOW || 'now 1-H'
 };
 
-const OUTAGE_PATTERNS = /\b(down|is down|server down|servers down|server outage|outage|not working|crash|cannot login|offline|error)\b/i;
-const BENIGN_PATTERNS = /\b(download|apk|lyrics|wallpaper|guide|installer)\b/i;
+const OUTAGE_PATTERNS = /\b(down|is down|server down|servers down|server outage|outage|not working|crash|cannot login|offline|error|halted|trading halted|market crash|blackout|cyberattack)\b/i;
+const FINANCIAL_PATTERNS = /\b(stock|stocks|market|nasdaq|dow jones|trading|shares|crypto|selloff|recession|drop|halt)\b/i;
+const CONFLICT_PATTERNS = /\b(war|missile|airstrike|military|airspace|conflict|blackout|cyberattack|ceasefire|drone strike)\b/i;
+const BENIGN_PATTERNS = /\b(download|apk|lyrics|wallpaper|guide|installer|weather|forecast|temperature|movie|song|score|highlights)\b/i;
 
 async function jitter(minMs = 300, maxMs = 700) {
   const ms = Math.floor(minMs + Math.random() * (maxMs - minMs));
@@ -94,10 +96,11 @@ async function evaluateTrends(browser, target) {
           const q = (item.query || '').trim();
           if (BENIGN_PATTERNS.test(q)) continue;
           const isBreakout = item.formattedValue === 'Breakout' || (typeof item.value === 'number' && item.value >= 1000);
-          if (isBreakout && OUTAGE_PATTERNS.test(q)) {
+          const isMatch = OUTAGE_PATTERNS.test(q) || FINANCIAL_PATTERNS.test(q) || CONFLICT_PATTERNS.test(q);
+          if (isBreakout && isMatch) {
             maxScore = Math.max(maxScore, 85);
             breakoutTerms.push(`${q} (Breakout)`);
-          } else if (OUTAGE_PATTERNS.test(q) && typeof item.value === 'number' && item.value >= 250) {
+          } else if (isMatch && typeof item.value === 'number' && item.value >= 250) {
             maxScore = Math.max(maxScore, 45);
             breakoutTerms.push(`${q} (+${item.value}%)`);
           }
@@ -122,7 +125,7 @@ async function transmitPayload(records) {
     pipeline_provenance: {
       runner: 'latency-bench-runner',
       partition: CONFIG.partition,
-      total_partitions: CONFIG.totalPartITIONS || CONFIG.totalPartitions,
+      total_partitions: CONFIG.totalPartitions,
       timestamp: Math.floor(Date.now() / 1000)
     },
     services: records
@@ -144,7 +147,7 @@ async function transmitPayload(records) {
 }
 
 async function run() {
-  console.log(`=== Latency Bench Evaluator [Partition ${CONFIG.partition}/${CONFIG.totalPartitions}] ===`);
+  console.log(`=== Net Latency Bench Evaluator [Partition ${CONFIG.partition}/${CONFIG.totalPartitions}] ===`);
   const targets = await fetchTargets();
   if (targets.length === 0) {
     console.log('[Collector] Zero targets assigned to this partition.');
@@ -176,7 +179,7 @@ async function run() {
         report_count: calculatedReports,
         timestamp: Math.floor(Date.now() / 1000)
       });
-      console.log(`  ✓ ${target.title}: Trends=${trends.score}, Official=${statusScore}`);
+      console.log(`  â ${target.title}: Trends=${trends.score}, Official=${statusScore}`);
     }
   } finally {
     await browser.close();
