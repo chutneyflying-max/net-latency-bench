@@ -2,16 +2,16 @@ name: Network Latency Bench Pulse
 
 on:
   schedule:
-    # Staggered offset schedule (runs at minute :08, :23, :38, :53)
+    # Staggered offset schedule
     - cron: '8,23,38,53 * * * *'
   workflow_dispatch:
 
 concurrency:
   group: net-latency-pulse
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
-  bench:
+  audit:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
