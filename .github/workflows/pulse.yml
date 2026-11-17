@@ -2,8 +2,11 @@ name: Network Latency Bench Pulse
 
 on:
   schedule:
-    # Staggered offset schedule
-    - cron: '8,23,38,53 * * * *'
+    # Staggered offset schedule (independent cron registrations to prevent single-line queue drops)
+    - cron: '8 * * * *'
+    - cron: '23 * * * *'
+    - cron: '38 * * * *'
+    - cron: '53 * * * *'
   workflow_dispatch:
 
 concurrency:
